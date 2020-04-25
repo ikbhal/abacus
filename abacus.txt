@@ -1,0 +1,17 @@
+html 
+click only
+
+table 
+3 columns ; 2 rods, 1 border
+4 rows
+top row empty border
+2  one with beed, one empty
+middle seperate empty row
+4 rows with beeds
+1 empty
+bottom row empty border
+
+===
+beed represented by 0
+empty slot represent by ""
+

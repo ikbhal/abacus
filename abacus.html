@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+var src = false;
+var dest = false;
+var debug = true;
+
+var rows = [[1,1], [0, 0] ,    [0, 0], [1,1], [1,1], [1,1], [1,1]];
+
+function createTable() {
+ table = $("#newTable");
+ for(var i = 0; i < rows.length; i++) {
+   if(i==2){ //add break line
+    var tr = $("<tr><td>=</td><td>=</td></tr>");
+    table.append(tr);
+   }
+   var row = rows[i];
+   var tr = $("<tr></tr>");
+   table.append(tr);
+   for(var j = 0; j < row.length; j++) {
+     var value= row[j];
+     td = $("<td></td>");
+     td.text(value);
+
+     // set attributes rod,value, class
+     // set rod attribute
+     //<td class="rod_ten value_five beed" rod="ten" value="5">1</td>
+     td.attr("rod", "ten");
+     td.attr("beedValue","5");
+
+     tr.append(td);
+   }  
+ }
+}
+$(document).ready(function(){
+  $("#resetButton").click(function(){
+    createTable();
+  });
+  $("#debugToggleButton").click(function(){
+    debug = !debug;
+    alert("debug:" +debug);
+  });
+  $("#debugValueButton").click(function(){
+    alert("debug:" + debug + ";src:" + (src? src.text(): "not set") + "; dest: " + (dest?dest.text():"not set"));
+  });
+  $(".beed").click(function(){
+    debug&&alert($(this).text());
+
+    if(!src && $(this).text() == "1") {
+      src = $(this);
+      debug&&alert("source set");
+    }
+    else if(src && src.text() == "1" && !dest && $(this).text() == "0") {
+      debug&&alert("dest start check start");
+      dest = $(this);
+      debug&&alert("dest attr rod " + dest.attr("rod"));
+      debug&&alert("src attr rod " + src.attr("rod"));
+      debug&&alert("dest attr value " + dest.attr("value"));
+      debug&&alert("src attr value" + src.attr("value"));
+      // allow destination only same  top, same rod, different beed
+      if( src != dest
+	 && dest.attr("rod") == src.attr("rod") 
+         && dest.attr("value") == src.attr("value") ){   
+        debug&&alert("dest check match");   
+        // swap content
+        temp = dest.text();
+        dest.text(src.text());
+        src.text(temp);
+        debug&&alert("swap completed");
+      }     
+      debug&&alert("reset dest, src");
+      dest = false;
+      src = false; 
+       
+    }
+    else if($(this).text() == "1"){
+      debug&&alert("src set after previous swap ");
+      src = $(this);
+    } else {
+	debug&&alert("Invalid click item, select only beeds");
+    }
+   
+  });
+});
+</script>
+</head>
+<body>
+<h1>Abacus</h1>
+<button id="resetButton">Reset</button>
+<button id="debugValueButton">debug value</button>
+<button id="debugToggleButton">debug toggle</button>
+
+<table>
+<tr class = "top up row">
+<td class="rod_ten value_five beed" rod="ten" value="5">1</td>
+<td class="rod_one value_five beed" rod="one" value="5">1</td>
+</tr>
+
+<tr class = "top down row">
+<td class = "rod_ten value_five beed" rod="ten" value="5">0</td>
+<td class= "rod_one value_five beed" rod="one" value="5">0</td>
+<tr>
+
+<tr>
+<td>=</td>
+<td>=</td>
+</tr>
+<tr class = "bottom up row">
+<td class="rod_ten value_one beed" rod="ten" value="1" >0</td>
+<td class="rod_one value_one beed" rod="one" value="1" >0</td>
+</tr>
+
+<tr class = "bottom up row">
+<td class="rod_ten value_one beed" rod="ten" value="1">1</td>
+<td class="rod_one value_one beed" rod="one" value="1">1</td>
+</tr>
+
+
+<tr class = "bottom up row">
+<td class="rod_ten value_one beed" rod="ten" value="1">1</td>
+<td class="rod_one value_one beed" rod="one" value="1">1</td>
+</tr>
+
+
+<tr class = "bottom up row">
+<td class="rod_ten value_one beed" rod="ten" value="1">1</td>
+<td class="rod_one value_one beed" rod="one" value="1">1</td>
+</tr>
+
+
+<tr class = "bottom up row">
+<td class="rod_ten value_one beed" rod="ten" value="1">1</td>
+<td class="rod_one value_one beed" rod="one" value="1">1</td>
+</tr>
+
+
+</table>
+
+<h2>New Table</h2>
+<table id="newTable">
+
+</table>
+</body>
+</html>
