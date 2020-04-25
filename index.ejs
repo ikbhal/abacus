@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="../../socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script> -->
+
+
+<script>
+var src = false;
+var dest = false;
+var debug = true;
+
+var rowsInit = [[1,1], [0, 0] ,    [0, 0], [1,1], [1,1], [1,1], [1,1]];
+var rows = [[1,1], [0, 0] ,    [0, 0], [1,1], [1,1], [1,1], [1,1]];
+var socket = false;
+function resetAll() {
+  src = false;
+  dest = false;
+  debug = true;
+  socket = false;
+  for(var i=0;i<rows.length;i++) {
+    for(var j=0;j<rows[0].length;j++) {
+      rows[i][j] = rowsInit[i][j]; 
+    }
+  }
+}
+var value = 0;
+function calculateValue() {
+  var abacusValue = 0;
+  var rodFactor = 1;
+  
+  for(var j=rows[0].length-1;j>=0;j--) {
+    var rodFactor = 1;
+    switch(rows[0].length-j) {
+       case 1: rodFactor = 1; break;
+       case 2: rodFactor = 10; break;
+    }
+    var rodValue = 0;
+    for(var i=0;i<rows.length;i++) {
+      var beedValue = 0;
+      switch(i) {
+        case 0: beedValue = 0; break;
+        case 1: beedValue = 5; break;
+        case 2:
+        case 3: 
+        case 4: 
+        case 5: 
+        case 6:   
+          beedValue = 1; 
+        break;
+      }
+      if ( i > 1 && rows[i][j] == 0) 
+        break;
+      rodValue += rows[i][j] * rodFactor * beedValue;
+    }
+    abacusValue += rodValue;
+  }
+
+  return abacusValue;
+ 
+}
+
+
+
+
+function handleBeedClickCallBack(){
+ var beedId = $(this).attr('id');
+ handleBeedClick(beedId, true);
+}
+
+function handleBeedClick(beedId, emitFlag){
+//    debugger;
+    var beed = $("#"+beedId);
+    debug&&console.log(beed.attr('value'));
+
+    var beedId = beed.attr("id");
+    if(emitFlag){
+     socket.emit('handleBeedClick', beedId);//handleBeedClick
+    }
+
+    if(!src && beed.attr('value') == "1") {
+      src = beed;
+      debug&&console.log("source set");
+    }
+    else if(src && src.attr('value') == "1" && !dest && beed.attr('value') == "0") {
+      debug&&console.log("dest start check start");
+      dest = beed;
+      debug&&console.log("dest attr rod " + dest.attr("rod"));
+      debug&&console.log("src attr rod " + src.attr("rod"));
+      debug&&console.log("dest attr value " + dest.attr("value"));
+      debug&&console.log("src attr value" + src.attr("value"));
+      // allow destination only same  top, same rod, different beed
+      if( src != dest
+	 && dest.attr("rod") == src.attr("rod") 
+         && dest.attr("value") == src.attr("value") ){   
+        debug&&console.log("dest check match");   
+        // swap content
+        temp = dest.text();
+        dest.text(src.text());
+        src.text(temp);
+
+        // swap values in rows array
+        // get row index
+        // get column index
+        // for both src, destination
+        
+        var dr = dest.attr("r");
+        var dc = dest.attr("c");
+        var sr = src.attr("r");
+        var sc = src.attr("c");
+        temp = rows[dr][dc];
+        rows[dr][dc] = rows[sr][sc];
+        rows[sr][sc] = temp;
+        
+        debug&&console.log("swap completed");
+      }     
+      debug&&console.log("reset dest, src");
+      dest = false;
+      src = false; 
+       
+    }
+    else if(beed.attr('value') == "1"){
+      debug&&console.log("src set after previous swap ");
+      src = beed;
+    } else {
+	debug&&console.log("Invalid click item, select only beeds");
+    }
+   
+}
+
+function createTable() {
+ table = $("#newTable");
+ table.empty();
+ var beedId = 1;
+ for(var i = 0; i < rows.length; i++) {
+   if(i==2){ //add break line
+    var tr = $("<tr><td>=</td><td>=</td></tr>");
+    table.append(tr);
+   }
+   var row = rows[i];
+   var tr = $("<tr></tr>");
+   table.append(tr);
+   for(var j = 0; j < row.length; j++) {
+     var existValue= row[j];
+     td = $("<td class='beed'></td>");
+     if(existValue){
+       td.addClass("full");
+     }else {
+       td.addClass("empty");
+     }
+
+     // set attributes rod,value, class
+     // set rod attribute
+     //<td class="rod_ten value_five beed" rod="ten" value="5">1</td>
+     var rod = "one";
+     var value = "one";
+     switch(row.length-j) {
+       case 1: rod= "one"; break;
+       case 2: rod= "ten"; break;
+     }
+
+     switch(i) {
+       case 0: case 1: value = "five"; break;
+       default: value ="one"; break;
+     }
+     td.attr("rod", rod);
+     td.attr("value", value);
+     
+     td.attr("r", i);
+     td.attr("c", j);
+     td.attr("id", beedId);beedId++;
+
+     tr.append(td);
+   }  
+ }
+
+ $(".beed").click(handleBeedClickCallBack);
+}
+$(document).ready(function(){
+
+// chatstart
+            socket = io.connect('http://localhost:8080');
+             console.log("socket created", socket);
+            // handle beedclick
+            socket.on('handleBeedClick', function(beedId) {
+               console.log("client handle beed click from other client ", beedId);
+//               debugger;
+               handleBeedClick(beedId, false);
+            });
+            // append text if someone is online
+            socket.on('is_online', function(username) {
+                $('#messages').append($('<li>').html(username));
+            });
+            // ask username
+            var username = prompt('Please tell me your name');
+            socket.emit('username', username);
+            $("#username").text(username);
+
+// charend
+
+
+  createTable();
+  $("#valueButton").click(function(){
+     value = calculateValue();
+     console.log("abacus value " + value);
+  });
+
+  $("#resetButton").click(function(){
+    resetAll();
+    createTable();
+  });
+  $("#debugToggleButton").click(function(){
+    debug = !debug;
+    console.log("debug:" +debug);
+  });
+  $("#debugValueButton").click(function(){
+    console.log("debug:" + debug + ";src:" + (src? src.text(): "not set") + "; dest: " + (dest?dest.text():"not set"));
+  });
+});
+</script>
+</head>
+<body>
+<h1>Abacus</h1>
+<h2>User: <span id="username">Guest</span> </h2>
+<button id="valueButton">Value</Button>
+<button id="resetButton">Reset</button>
+<button id="debugValueButton">debug value</button>
+<button id="debugToggleButton">debug toggle</button>
+
+<h2>Abacus</h2>
+<table id="newTable">
+
+</table>
+</body>
+</html>
